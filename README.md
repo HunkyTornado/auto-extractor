@@ -1,10 +1,15 @@
 # Auto Extractor
 
-The Auto Extractor is a Python script designed to automate the extraction of compressed archive files. It monitors a specified folder for newly created archive files, extracts their contents, and moves the extracted files to a destination folder. Supported archive formats include ZIP, RAR, 7Z, and TAR, making it versatile for various compression needs.
+The Auto Extractor is a Python script designed to automate the extraction of compressed archive files in the background as a Windows service. It monitors a specified folder for newly created archive files, extracts their contents, and moves the extracted files to a destination folder. Supported archive formats include ZIP, RAR, 7Z, and TAR, making it versatile for various compression needs.
+
+## Motive
+
+Many tasks require extracting compressed files continuously in the background, such as processing incoming data or managing archived content. The Archive Extractor simplifies this process by running as a Windows service, ensuring continuous operation without manual intervention.
 
 ## Key Features
 
-- **Automatic Extraction:** Continuously monitors a designated folder for new archive files and automatically extracts them upon detection.
+- **Background Service:** Runs as a Windows service, allowing continuous extraction of compressed files without user intervention.
+- **Automatic Extraction:** Monitors a designated folder for new archive files and automatically extracts them upon detection.
 - **Multi-format Support:** Supports popular archive formats including ZIP, RAR, 7Z, and TAR, providing flexibility for different compression requirements.
 - **Parallel Processing:** Utilizes asynchronous and parallel processing techniques to efficiently handle multiple archive extractions simultaneously, enhancing performance.
 - **Configuration Management:** Offers user-friendly configuration setup through a JSON file, allowing users to specify the source, processing, and destination folders for seamless integration into existing workflows.
@@ -21,9 +26,15 @@ The Auto Extractor is a Python script designed to automate the extraction of com
 3. Install dependencies:
 ```pip install -r requirements.txt```
 
-4. Run the script:
-```python auto_extractor.py```
+4. Install NSSM (Non-Sucking Service Manager):
 
+- Download NSSM from the [NSSM releases page](https://nssm.cc/download) and extract the zip file.
+- Open a command prompt window and navigate to the directory where NSSM was extracted.
+
+5. Install the Python script as a Windows service using NSSM:
+```nssm install "name-of-your-service" "directory-to-the.py"```
+
+Replace `"name-of-your-service"` with the desired name for your service and `"directory-to-the.py"` with the path to your Python script file.
 
 ## Configuration
 
