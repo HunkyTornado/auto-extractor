@@ -13,7 +13,7 @@ The Auto Extractor is a Python script designed to automate the extraction of com
 ## Usage
 
 1. Clone the repository:
-```git clone https://github.com/yourusername/auto-extractor.git```
+```git clone https://github.com/hunkytornado/auto-extractor.git```
 
 2. Navigate to the project directory:
 ```cd auto-extractor```
