@@ -1,90 +1,56 @@
 import os
-import asyncio
-import logging
 import shutil
-import patoolib
-from concurrent.futures import ThreadPoolExecutor
+import time
+from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import json
+import patoolib
 
-logging.basicConfig(filename='extraction.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+# Define directories
+dirA = r'K:\Compressed'
+dirB = r'K:\Processing'
+dirC = r'K:\Decompressed'
+dirD = r'K:\Completed'
 
-class ArchiveHandler(FileSystemEventHandler):
-    def __init__(self, queue):
-        super().__init__()
-        self.queue = queue
+# Define log file path
+log_file = os.path.join(dirD, 'autounzipper.log')
 
+# Clear previous log file or create a new one
+with open(log_file, 'w') as f:
+    f.write(f'Autounzipper Log - {datetime.now()}\n\n')
+
+# Function to handle file system events
+class MyHandler(FileSystemEventHandler):
     def on_created(self, event):
-        if not event.is_directory:
-            supported_formats = ['.zip', '.rar', '.7z', '.tar']  # Add more formats as needed
-            for ext in supported_formats:
-                if event.src_path.endswith(ext):
-                    self.queue.put_nowait(event.src_path)
+        # Check if the event is a file creation and the file is an archive
+        if event.is_directory == False and any(event.src_path.lower().endswith(ext) for ext in ('.zip', '.rar', '.7z', '.tar', '.tar.gz', '.tar.bz2')):
+            filename = os.path.basename(event.src_path)
+            source_file = os.path.join(dirA, filename)
+            destination_folder = os.path.join(dirC, os.path.splitext(filename)[0])
+            # Move archive file to processing directory
+            shutil.move(source_file, dirB)
+            try:
+                # Extract archive file
+                patoolib.extract_archive(os.path.join(dirB, filename), outdir=destination_folder)
+                # Move archive file to completed directory
+                shutil.move(os.path.join(dirB, filename), dirD)
+                # Log successful extraction
+                with open(log_file, 'a') as f:
+                    f.write(f'Successfully extracted {filename} to {destination_folder}\n')
+            except Exception as e:
+                # Log extraction failure
+                with open(log_file, 'a') as f:
+                    f.write(f'Error extracting {filename}: {str(e)}\n')
 
-async def move_and_extract_archive(source_path, processing_path, extract_path):
-    try:
-        shutil.move(source_path, processing_path)
-        os.makedirs(extract_path, exist_ok=True)
-        patoolib.extract_archive(processing_path, outdir=extract_path)
-        logging.info(f"Extracted {processing_path} to {extract_path}")
-        os.remove(processing_path)
-    except Exception as e:
-        logging.error(f"Error processing {source_path}: {e}")
-
-async def process_archives(queue, processing_folder, destination_folder):
-    with ThreadPoolExecutor() as executor:
-        while True:
-            source_path = await queue.get()
-            file_name = os.path.basename(source_path)
-            processing_path = os.path.join(processing_folder, file_name)
-            extract_path = os.path.join(destination_folder, os.path.splitext(file_name)[0])
-            await asyncio.get_event_loop().run_in_executor(executor, move_and_extract_archive, source_path, processing_path, extract_path)
-
-def setup_observer(source_folder, event_queue):
-    event_handler = ArchiveHandler(event_queue)
+# Start watching directory for new archive files
+if __name__ == "__main__":
+    event_handler = MyHandler()
     observer = Observer()
-    observer.schedule(event_handler, source_folder, recursive=False)
+    observer.schedule(event_handler, path=dirA, recursive=False)
     observer.start()
-    return observer
-
-async def main():
-    config_file = "config.json"
-    if os.path.exists(config_file):
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-        source_folder = config['source_folder']
-        processing_folder = config['processing_folder']
-        destination_folder = config['destination_folder']
-    else:
-        source_folder = input("Enter path to compressed folder: ")
-        processing_folder = input("Enter path to processing folder: ")
-        destination_folder = input("Enter path to decompressed folder: ")
-        config = {
-            'source_folder': source_folder,
-            'processing_folder': processing_folder,
-            'destination_folder': destination_folder
-        }
-        with open(config_file, 'w') as f:
-            json.dump(config, f)
-
-    os.makedirs(processing_folder, exist_ok=True)
-    os.makedirs(destination_folder, exist_ok=True)
-
-    event_queue = asyncio.Queue()
-    observer = setup_observer(source_folder, event_queue)
-
-    workers = [asyncio.create_task(process_archives(event_queue, processing_folder, destination_folder)) for _ in range(4)]  # Adjust number of workers as needed
-
     try:
         while True:
-            await asyncio.sleep(1)
+            time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
-
     observer.join()
-    for worker in workers:
-        worker.cancel()
-
-if __name__ == "__main__":
-    asyncio.run(main())
