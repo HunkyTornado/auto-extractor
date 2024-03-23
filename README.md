@@ -13,16 +13,16 @@ The Auto Extractor is a Python script designed to automate the extraction of com
 ## Usage
 
 1. Clone the repository:
-```git clone https://github.com/yourusername/archive-extractor.git```
+```git clone https://github.com/yourusername/auto-extractor.git```
 
 2. Navigate to the project directory:
-```cd archive-extractor```
+```cd auto-extractor```
 
 3. Install dependencies:
 ```pip install -r requirements.txt```
 
 4. Run the script:
-```python archive_extractor.py```
+```python auto_extractor.py```
 
 
 ## Configuration
